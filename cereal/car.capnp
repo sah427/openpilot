@@ -111,6 +111,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     focusRecoverActive @86;
     wrongCruiseMode @87;
     neosUpdateRequired @88;
+    modeldLagging @89;
   }
 }
 
@@ -137,6 +138,8 @@ struct CarState {
   brake @5 :Float32;      # this is user pedal only
   brakePressed @6 :Bool;  # this is user pedal only
   brakeLights @19 :Bool;
+  brakeUnavailable @38 :Bool;
+  brakeHold @39 :Bool;
 
   # steering wheel
   steeringAngle @7 :Float32;       # deg
