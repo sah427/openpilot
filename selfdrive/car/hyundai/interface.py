@@ -19,8 +19,8 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.radarOffCan = True
 
-    # Hyundai port is a community feature for now
-    ret.communityFeature = True
+    # Most Hyundai car ports are community features for now
+    ret.communityFeature = candidate not in [CAR.SONATA]
 
     ret.steerActuatorDelay = 0.35  # Default delay
     ret.steerRateCost = 0.45
