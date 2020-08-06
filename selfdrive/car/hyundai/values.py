@@ -178,6 +178,26 @@ FW_VERSIONS = {
       b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
     ],
   },
+  CAR.SONATA_HEV: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',
+    ],
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100\xf1\xa01.04',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x87391062J002\xf1\xa0000P',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x8756310-L5500\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5500 4DNHC102\xf1\xa01.02',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DN8HMFC  AT USA LHD 1.00 1.04 99211-L1000 191016',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00PSBG2323  E09\x00\x00\x00\x00\x00\x00\x00TDN2H20SA5\x97R\x88\x9e',
+    ],
+  },
   CAR.SANTA_FE: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00TM__ SCC F-CUP      1.00 1.02 99110-S2000         \xf1\xa01.02'],
     (Ecu.esp, 0x7d1, None): [b'\xf1\x00TM ESC \x02 100\x18\x030 58910-S2600\xf1\xa01.00',],
@@ -251,7 +271,9 @@ FEATURES = {
   "use_bsm": set([CAR.SONATA, CAR.PALISADE, CAR.HYUNDAI_GENESIS, CAR.GENESIS_G80, CAR.GENESIS_G90]),
 }
 
-EV_HYBRID = set([CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.SONATA_HEV])
+ELEC_VEH = set([CAR.IONIQ_EV_LTD, CAR.KONA_EV])
+
+HYBRID_VEH = set([CAR.OPTIMA_H, CAR.IONIQ, CAR.SONATA_HEV])
 
 DBC = {
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
@@ -260,17 +282,17 @@ DBC = {
   CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
   CAR.HYUNDAI_GENESIS: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ_EV_LTD: dbc_dict('hyundai_kia_generic', None),
-  CAR.IONIQ: dbc_dict('hyundai_kia_generic', None),
+  CAR.IONIQ: dbc_dict('hyundai_kia_generic_hybrid', None),
   CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic_hybrid', None),
   CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', None),
-  CAR.SONATA_HEV: dbc_dict('hyundai_kia_generic', None),
+  CAR.SONATA_HEV: dbc_dict('hyundai_kia_generic_hybrid', None),
   CAR.SONATA_2019: dbc_dict('hyundai_kia_generic', None),
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', None),
   CAR.VELOSTER: dbc_dict('hyundai_kia_generic', None),
