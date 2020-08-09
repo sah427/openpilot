@@ -17,7 +17,7 @@ const CanMsg HYUNDAI_TX_MSGS[] = {
   // {1186, 0, 8}  //   4a2SCC, Bus 0
  };
 
-// TODO: missing checksum for wheel speeds message, worst case failure is
+// TODO: missing checksum for wheel speeds message,worst failure case is
 //       wheel speeds stuck at 0 and we don't disengage on brake press
 AddrCheckStruct hyundai_rx_checks[] = {
   {.msg = {{902, 0, 8, .check_checksum = false, .max_counter = 15U, .expected_timestep = 10000U}}},

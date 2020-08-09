@@ -176,6 +176,7 @@ class CarState(CarStateBase):
       ("ACCEnable", "TCS13", 0),
       ("BrakeLight", "TCS13", 0),
       ("DriverBraking", "TCS13", 0),
+      ("DriverOverride", "TCS13",0),
 
       ("ESC_Off_Step", "TCS15", 0),
 
@@ -226,7 +227,7 @@ class CarState(CarStateBase):
       checks += [
         ("E_EMS11", 50),
       ]
-    if CP.carFingerprint in HYBRID_VEH:
+    elif CP.carFingerprint in HYBRID_VEH:
       signals += [
         ("CR_Vcu_AccPedDep_Pc", "EV_PC4", 0),
       ]
