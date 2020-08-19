@@ -8,6 +8,8 @@ GearShifter = car.CarState.GearShifter
 
 
 class CarState(CarStateBase):
+  def __init__(self, CP):
+    super().__init__(CP)
     self.cruise_main_button = 0
     self.cruise_buttons = 0
   def update(self, cp, cp_cam):
