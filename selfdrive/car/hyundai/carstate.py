@@ -196,10 +196,10 @@ class CarState(CarStateBase):
 
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
-      ("CF_VSM_Warn", "SCC12", 0),
       ("SCCInfoDisplay", "SCC11", 0),
+      ("ACC_ObjDist", "SCC11", 0),
+      ("ACCMode", "SCC12", 1),
 
-      ("AEB_CmdAct", "SCC12", 0),
       ("CF_Lvr_CruiseSet", "LVR12", 0),
     ]
 
@@ -281,6 +281,11 @@ class CarState(CarStateBase):
         ("CF_VSM_Warn", "FCA11", 0),
       ]
       checks += [("FCA11", 50)]
+    else:
+      signals += [
+        ("AEB_CmdAct", "SCC12", 0),
+        ("CF_VSM_Warn", "SCC12", 0),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
