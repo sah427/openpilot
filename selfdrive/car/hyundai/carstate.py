@@ -196,9 +196,11 @@ class CarState(CarStateBase):
 
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
+      ("CF_VSM_Warn", "SCC12", 0),
       ("SCCInfoDisplay", "SCC11", 0),
 
-        ("CF_Lvr_CruiseSet", "LVR12", 0),
+      ("AEB_CmdAct", "SCC12", 0),
+      ("CF_Lvr_CruiseSet", "LVR12", 0),
     ]
 
     checks = [
