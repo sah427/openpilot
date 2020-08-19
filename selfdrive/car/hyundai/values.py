@@ -229,13 +229,11 @@ FEATURES = {
                       CAR.GRANDEUR_HEV, CAR.KIA_NIRO_HEV, CAR.KONA_HEV]),
 
   # send LFA MFA message for new HKG models
-  "send_lfa_mfa": set([CAR.SONATA, CAR.PALISADE, CAR.SONATA_HEV, CAR.SANTA_FE, CAR.KIA_NIRO_EV]),
+  "send_lfa_mfa": set([]),
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
-  "use_fca": set([CAR.SONATA, CAR.SONATA_HEV, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.KONA, CAR.KONA_EV,
-              CAR.KIA_FORTE, CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_HEV, CAR.KIA_NIRO_EV, CAR.KIA_CEED, CAR.KIA_CADENZA_HEV,
-              CAR.KIA_SPORTAGE, CAR.KONA_HEV, CAR.PALISADE, CAR.GRANDEUR_HEV, CAR.GENESIS_G70, CAR.VELOSTER]),
+  "use_fca": set([]),
 
-  "use_bsm": set([CAR.SONATA, CAR.PALISADE, CAR.HYUNDAI_GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.KONA]),
+  "use_bsm": set([]),
 }
 
 ELEC_VEH = set([CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV])

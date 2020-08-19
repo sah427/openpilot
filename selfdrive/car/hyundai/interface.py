@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
+from numpy import interp
+
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINTS
+from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINTS, Buttons
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.controls.lib.pathplanner import LANE_CHANGE_SPEED_MIN
+
+EventName = car.CarEvent.EventName
+ButtonType = car.CarState.ButtonEvent.Type
 
 class CarInterface(CarInterfaceBase):
+  def __init__(self, CP, CarController, CarState):
+    super().__init__(CP, CarController, CarState)
+    self.buttonEvents = []
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -154,9 +163,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRateCost = 0.4
 
     # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in [ CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ_HEV, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_2019, 
-                     CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER, CAR.GENESIS_G70, CAR.SONATA_HEV, CAR.SANTA_FE]:
-      ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
+    ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
 
     ret.centerToFront = ret.wheelbase * 0.4
 
@@ -181,7 +188,7 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
-    events = self.create_common_events(ret)
+    ret.cruiseState.enabled = ret.cruiseState.available
     #TODO: addd abs(self.CS.angle_steers) > 90 to 'steerTempUnavailable' event
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
@@ -191,6 +198,48 @@ class CarInterface(CarInterfaceBase):
       self.low_speed_alert = False
     if self.low_speed_alert:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
+
+    buttonEvents = []
+    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
+      be = car.CarState.ButtonEvent.new_message()
+      be.pressed = self.CS.cruise_buttons != 0 
+      but = self.CS.cruise_buttons
+      if but == Buttons.RES_ACCEL:    # TODO avoid speed increase due to res spam when stopped behind target
+        be.type = ButtonType.accelCruise
+      elif but == Buttons.SET_DECEL:
+        be.type = ButtonType.decelCruise
+      elif but == Buttons.GAP_DIST:
+        be.type = ButtonType.gapAdjustCruise
+      elif but == Buttons.CANCEL:
+        be.type = ButtonType.cancel
+      else:
+        be.type = ButtonType.unknown
+      buttonEvents.append(be)
+      self.buttonEvents = buttonEvents
+
+    if self.CS.cruise_main_button != self.CS.prev_cruise_main_button:
+      be = car.CarState.ButtonEvent.new_message()
+      be.type = ButtonType.altButton3
+      be.pressed = bool(self.CS.cruise_main_button)
+      buttonEvents.append(be)
+      self.buttonEvents = buttonEvents
+
+    # handle button presses
+    for b in self.buttonEvents:
+      # do enable on both accel and decel buttons
+      if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and b.pressed:
+        events.add(EventName.buttonEnable)
+      # do disable on button down
+      if b.type == ButtonType.cancel and b.pressed:
+        events.add(EventName.buttonCancel)
+      if b.type == ButtonType.altButton3 and b.pressed:
+        events.add(EventName.pcmDisable)
+    if EventName.wrongCarMode in events.events:
+      events.events.remove(EventName.wrongCarMode)
+    if EventName.pcmDisable in events.events:
+      events.events.remove(EventName.pcmDisable)
+
+    events = self.create_common_events(ret)
 
     ret.events = events.to_msg()
 

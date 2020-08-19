@@ -37,14 +37,17 @@ class CarState(CarStateBase):
 
     # cruise state
     ret.cruiseState.available = True
-    ret.cruiseState.enabled = cp.vl["SCC12"]['ACCMode'] != 0
+    ret.cruiseState.enabled = cp.vl["LVR12"]['CF_Lvr_CruiseSet'] != 0
     ret.cruiseState.standstill = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
 
     if ret.cruiseState.enabled:
       speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
-      ret.cruiseState.speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
+      ret.cruiseState.speed = cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv
     else:
       ret.cruiseState.speed = 0
+
+    self.cruise_main_button = cp.vl["CLU11"]["CF_Clu_CruiseSwMain"]
+    self.cruise_buttons = cp.vl["CLU11"]["CF_Clu_CruiseSwState"]
 
     # TODO: Find brake pressure
     ret.brake = 0
@@ -194,8 +197,8 @@ class CarState(CarStateBase):
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
       ("SCCInfoDisplay", "SCC11", 0),
-      ("ACC_ObjDist", "SCC11", 0),
-      ("ACCMode", "SCC12", 1),
+
+        ("CF_Lvr_CruiseSet", "LVR12", 0),
     ]
 
     checks = [
@@ -209,8 +212,6 @@ class CarState(CarStateBase):
       ("CGW4", 5),
       ("WHL_SPD11", 50),
       ("SAS11", 100),
-      ("SCC11", 50),
-      ("SCC12", 50),
     ]
 
     if CP.carFingerprint in FEATURES["use_bsm"]:
@@ -278,11 +279,6 @@ class CarState(CarStateBase):
         ("CF_VSM_Warn", "FCA11", 0),
       ]
       checks += [("FCA11", 50)]
-    else:
-      signals += [
-        ("AEB_CmdAct", "SCC12", 0),
-        ("CF_VSM_Warn", "SCC12", 0),
-      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
