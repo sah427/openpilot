@@ -9,6 +9,8 @@ GearShifter = car.CarState.GearShifter
 
 class CarState(CarStateBase):
   def update(self, cp, cp_cam):
+    self.prev_cruise_buttons = self.cruise_buttons
+    self.prev_cruise_main_button = self.cruise_main_button
     ret = car.CarState.new_message()
 
     ret.doorOpen = any([cp.vl["CGW1"]['CF_Gway_DrvDrSw'], cp.vl["CGW1"]['CF_Gway_AstDrSw'],
