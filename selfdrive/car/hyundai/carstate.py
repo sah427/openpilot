@@ -8,6 +8,8 @@ GearShifter = car.CarState.GearShifter
 
 
 class CarState(CarStateBase):
+    self.cruise_main_button = 0
+    self.cruise_buttons = 0
   def update(self, cp, cp_cam):
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_main_button = self.cruise_main_button
