@@ -189,6 +189,8 @@ class CarInterface(CarInterfaceBase):
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
     ret.cruiseState.enabled = ret.cruiseState.available
+
+    events = self.create_common_events(ret)
     #TODO: addd abs(self.CS.angle_steers) > 90 to 'steerTempUnavailable' event
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
@@ -238,8 +240,6 @@ class CarInterface(CarInterfaceBase):
       events.events.remove(EventName.wrongCarMode)
     if EventName.pcmDisable in events.events:
       events.events.remove(EventName.pcmDisable)
-
-    events = self.create_common_events(ret)
 
     ret.events = events.to_msg()
 
