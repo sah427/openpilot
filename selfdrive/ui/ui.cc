@@ -25,7 +25,7 @@ int write_param_float(float param, const char* param_name, bool persistent_param
 void ui_init(UIState *s) {
   pthread_mutex_init(&s->lock, NULL);
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
-                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"
+                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState", "carState", "liveMpc", "liveParameters"
   });
 
   s->ipc_fd = -1;
@@ -90,6 +90,11 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.controls_state = event.getControlsState();
     s->controls_seen = true;
 
+    s->scene.angleSteers = scene.controls_state.getAngleSteers();
+    s->scene.steerOverride= scene.controls_state.getSteerOverride();
+    s->scene.output_scale = scene.controls_state.getLateralControlState().getPidState().getOutput();
+    s->scene.angleSteersDes = scene.controls_state.getAngleSteersDes();
+
     auto alert_sound = scene.controls_state.getAlertSound();
     if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
@@ -129,10 +134,20 @@ void handle_message(UIState *s, SubMaster &sm) {
       }
     }
   }
+
+  if (sm.updated("liveParameters")) {
+    //scene.liveParams = sm["liveParameters"].getLiveParameters();
+    auto data = sm["liveParameters"].getLiveParameters();    
+    s->scene.steerRatio=data.getSteerRatio();
+  }
+  
   if (sm.updated("radarState")) {
     auto data = sm["radarState"].getRadarState();
     scene.lead_data[0] = data.getLeadOne();
     scene.lead_data[1] = data.getLeadTwo();
+    s->scene.lead_v_rel = scene.lead_data[0].getVRel();
+    s->scene.lead_d_rel = scene.lead_data[0].getDRel();
+    s->scene.lead_status = scene.lead_data[0].getStatus();
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
@@ -187,6 +202,18 @@ void handle_message(UIState *s, SubMaster &sm) {
   } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
     scene.frontview = false;
   }
+
+  if (sm.updated("carState")) {
+    auto data = sm["carState"].getCarState();
+    if(scene.leftBlinker!=data.getLeftBlinker() || scene.rightBlinker!=data.getRightBlinker()){
+      scene.blinker_blinkingrate = 100;
+    }
+    scene.brakeLights = data.getBrakeLights();
+    scene.leftBlinker = data.getLeftBlinker();
+    scene.rightBlinker = data.getRightBlinker();
+    scene.leftblindspot = data.getLeftBlindspot();
+    scene.rightblindspot = data.getRightBlindspot();
+  } 
 
   s->started = scene.thermal.getStarted() || scene.frontview;
   // Handle onroad/offroad transition
