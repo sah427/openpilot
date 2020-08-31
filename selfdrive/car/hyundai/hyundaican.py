@@ -7,10 +7,10 @@ hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
-                  left_lane_depart, right_lane_depart, lfa_available, bus):
+                  left_lane_depart, right_lane_depart, lfa_available):
   values = lkas11
-  values["CF_Lkas_LdwsSysState"] = 3 if steer_req else sys_state
-  values["CF_Lkas_SysWarning"] = sys_warning
+  values["CF_Lkas_LdwsSysState"] = sys_state
+  values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
   values["CR_Lkas_StrToqReq"] = apply_steer
@@ -59,19 +59,15 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
   values["CF_Lkas_Chksum"] = checksum
 
-  return packer.make_can_msg("LKAS11", bus, values)
+  return packer.make_can_msg("LKAS11", 0, values)
 
 
-def create_clu11(packer, frame, bus, clu11, button, speed):
+def create_clu11(packer, frame, clu11, button):
   values = clu11
-
-  if bus != 1:
-    values["CF_Clu_CruiseSwState"] = button
-    values["CF_Clu_Vanz"] = speed
-  else:
-    values["CF_Clu_Vanz"] = speed
+  values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_AliveCnt1"] = frame % 0x10
-  return packer.make_can_msg("CLU11", bus, values)
+  return packer.make_can_msg("CLU11", 0, values)
+
 
 def create_lfa_mfa(packer, frame, enabled):
   values = {

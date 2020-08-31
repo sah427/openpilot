@@ -112,12 +112,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     wrongCruiseMode @87;
     neosUpdateRequired @88;
     modeldLagging @89;
-    preKeepHandsOnWheel @90;
-    promptKeepHandsOnWheel @91;
-    keepHandsOnWheel @92;
-    deviceFalling @93;
-    opLongdisabled @94;
-    lkasButtonOff @95;
+    deviceFalling @90;
   }
 }
 
@@ -127,6 +122,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
 struct CarState {
   errorsDEPRECATED @0 :List(CarEvent.EventName);
   events @13 :List(CarEvent);
+
   # car speed
   vEgo @1 :Float32;         # best estimate of speed
   aEgo @16 :Float32;        # best estimate of acceleration
@@ -143,12 +139,6 @@ struct CarState {
   brake @5 :Float32;      # this is user pedal only
   brakePressed @6 :Bool;  # this is user pedal only
   brakeLights @19 :Bool;
-  leadDistance @37 : Float32;
-  brakeHold @38 :Bool;
-  parkBrake @39 :Bool;
-  tempOplongdisable @ 40 :Bool;
-  leadvisible @41 :Bool;
-  cruiseMainbutton @42 :Bool;
 
   # steering wheel
   steeringAngle @7 :Float32;       # deg
@@ -416,11 +406,8 @@ struct CarParams {
   communityFeature @46: Bool;  # true if a community maintained feature is detected
   fingerprintSource @49: FingerprintSource;
   networkLocation @50 :NetworkLocation;  # Where Panda/C2 is integrated into the car's CAN network
-  mdpsBus @51: Int8;
-  sasBus @52: Int8;
-  sccBus @53: Int8;
-  autoLcaEnabled @54: Bool;
-  steermaxLimit @55: Float32;
+  autoLcaEnabled @51: Bool;
+
 
   struct LateralParams {
     torqueBP @0 :List(Int32);

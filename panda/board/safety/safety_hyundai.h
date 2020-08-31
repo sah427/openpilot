@@ -7,11 +7,11 @@ const int HYUNDAI_DRIVER_TORQUE_ALLOWANCE = 50;
 const int HYUNDAI_DRIVER_TORQUE_FACTOR = 2;
 const int HYUNDAI_STANDSTILL_THRSLD = 30;  // ~1kph
 const CanMsg HYUNDAI_TX_MSGS[] = {
-  {832, 0, 8}, {832, 1, 8}, // LKAS11 Bus 0, 1
-  {1265, 0, 4}, {1265, 1, 4}, // CLU11 Bus 0, 1
+  {832, 0, 8},  // LKAS11 Bus 0
+  {1265, 0, 4}, // CLU11 Bus 0
   {1157, 0, 4}, // LFAHDA_MFC Bus 0
-  {1056, 0, 8}, //   SCC11,  Bus 0
-  {1057, 0, 8}, //   SCC12,  Bus 0
+  // {1056, 0, 8}, //   SCC11,  Bus 0
+  // {1057, 0, 8}, //   SCC12,  Bus 0
   // {1290, 0, 8}, //   SCC13,  Bus 0
   // {905, 0, 8},  //   SCC14,  Bus 0
   // {1186, 0, 8}  //   4a2SCC, Bus 0
@@ -30,7 +30,7 @@ const int HYUNDAI_RX_CHECK_LEN = sizeof(hyundai_rx_checks) / sizeof(hyundai_rx_c
 AddrCheckStruct hyundai_legacy_rx_checks[] = {
   {.msg = {{902, 0, 8, .expected_timestep = 10000U}}},
   {.msg = {{916, 0, 8, .expected_timestep = 10000U}}},
-  {.msg = {{1057, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}}},
+  //{.msg = {{1057, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}}},
 };
 const int HYUNDAI_LEGACY_RX_CHECK_LEN = sizeof(hyundai_legacy_rx_checks) / sizeof(hyundai_legacy_rx_checks[0]);
 
@@ -95,19 +95,8 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
                               hyundai_get_counter);
   }
 
-  int addr = GET_ADDR(to_push);
-  int bus = GET_BUS(to_push);
-
-  if ((bus == 1) && hyundai_mdps_harness_present) {
-
-    if (addr == 593) {
-      int torque_driver_new = ((GET_BYTES_04(to_push) & 0x7ff) * 0.79) - 808; // scale down new driver torque signal to match previous one
-      // update array of samples
-      update_sample(&torque_driver, torque_driver_new);
-    }
-  }
-
-  if (valid && (bus == 0)) {
+  if (valid && (GET_BUS(to_push) == 0)) {
+    int addr = GET_ADDR(to_push);
 
     if (addr == 593) {
       int torque_driver_new = ((GET_BYTES_04(to_push) & 0x7ff) * 0.79) - 808; // scale down new driver torque signal to match previous one
@@ -115,14 +104,16 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       update_sample(&torque_driver, torque_driver_new);
     }
 
-    // enter controls on rising edge of ACC, exit controls on ACC off
-    if (addr == 1057) {
-      // 2 bits: 13-14
-      int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
-      if (cruise_engaged && !cruise_engaged_prev) {
+    // engage for non ACC car
+    if (addr == 1265) {
+      // first byte
+      int cruise_engaged = (GET_BYTES_04(to_push) & 0x7);
+      // enable on res+ or set- buttons rising edge
+      if (!cruise_engaged_prev && (cruise_engaged == 1 || cruise_engaged == 2)) {
         controls_allowed = 1;
       }
-      if (!cruise_engaged) {
+      // disable on cancel rising edge
+      if (cruise_engaged == 4) {
         controls_allowed = 0;
       }
       cruise_engaged_prev = cruise_engaged;
@@ -144,21 +135,6 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     generic_rx_checks((addr == 832));
   }
-
-  if (valid && (bus == 2) && hyundai_radar_harness_present && (addr == 1057)) {
-
-    // enter controls on rising edge of ACC, exit controls on ACC off
-      // 2 bits: 13-14
-    int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
-    if (cruise_engaged && !cruise_engaged_prev) {
-      controls_allowed = 1;
-    }
-    if (!cruise_engaged) {
-      controls_allowed = 0;
-    }
-    cruise_engaged_prev = cruise_engaged;
-  }
-
   return valid;
 }
 
@@ -166,7 +142,6 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
-  int bus = GET_BUS(to_send);
 
   if (!msg_allowed(to_send, HYUNDAI_TX_MSGS, sizeof(HYUNDAI_TX_MSGS)/sizeof(HYUNDAI_TX_MSGS[0]))) {
     tx = 0;
@@ -177,7 +152,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   }
 
   // LKA STEER: safety check
-  if ((addr == 832) && ((bus == 0) || ((bus == 1) && (hyundai_mdps_harness_present)))) {
+  if (addr == 832) {
     int desired_torque = ((GET_BYTES_04(to_send) >> 16) & 0x7ff) - 1024;
     uint32_t ts = TIM2->CNT;
     bool violation = 0;
@@ -226,7 +201,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button.
   // ensuring that only the cancel button press is sent (VAL 4) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  if ((addr == 1265) && !controls_allowed && ((bus != 1) || (!hyundai_mdps_harness_present))) {
+  if ((addr == 1265) && !controls_allowed) {
     if ((GET_BYTES_04(to_send) & 0x7) != 4) {
       tx = 0;
     }
@@ -243,32 +218,10 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   // forward cam to ccan and viceversa, except lkas cmd
   if (!relay_malfunction) {
     if (bus_num == 0) {
-      if (hyundai_mdps_harness_present) {
-          if (addr != 1265){
-            bus_fwd = 12;
-          }
-          else {
-            bus_fwd = 2;
-          }
-      } else {
-        bus_fwd = 2;
-      }
-    }
-    if (bus_num == 1 && hyundai_mdps_harness_present) {
-        bus_fwd = 20;
+      bus_fwd = 2;
     }
     if ((bus_num == 2) && (addr != 832) && (addr != 1157)) {
-      if ((hyundai_mdps_harness_present)) {
-          if ((addr != 1056) && (addr != 1057)) {
-            bus_fwd = 10;
-          }
-          else {
-            bus_fwd = 1;
-          }
-      }
-      else {
-        bus_fwd = 0;
-      }
+      bus_fwd = 0;
     }
   }
   return bus_fwd;
