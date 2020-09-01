@@ -59,6 +59,8 @@ class CarController():
     self.currentspeed = 0
     self.smartspeed_old = 0
     self.smartspeedupdate = False
+    self.fixed_offset = 0
+    self.button_stop = 0
     if not travis:
       self.sm = messaging.SubMaster(['liveMapData'])
 
@@ -119,19 +121,20 @@ class CarController():
       if CS.is_set_speed_in_mph:
         self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_MPH
         self.fixed_offset = interp(self.smartspeed, splmoffsetmphBp, splmoffsetmphV)
+        self.smartspeed = self.smartspeed + int(self.fixed_offset)
         self.setspeed = CS.cruisesetspeed * CV.MS_TO_MPH
         self.minsetspeed = 20 * CV.MPH_TO_MS * CV.MS_TO_MPH
         self.currentspeed = int(CS.out.vEgo * CV.MS_TO_MPH)
       else:
         self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_KPH
         self.fixed_offset = interp(self.smartspeed, splmoffsetkphBp, splmoffsetkphV)
+        self.smartspeed = self.smartspeed + int(self.fixed_offset)
         self.setspeed = CS.cruisesetspeed * CV.MS_TO_KPH
         self.minsetspeed = 20 * CV.MPH_TO_MS * CV.MS_TO_KPH
         self.currentspeed = int(CS.out.vEgo * CV.MS_TO_KPH)
 
     if self.smartspeed_old != self.smartspeed:
       self.smartspeedupdate = True
-      self.smartspeed = self.smartspeed + int(self.fixed_offset)
 
     if enabled and CS.rawcruiseStateenabled and self.smartspeedupdate and (CS.cruise_buttons != 4)\
             and (self.minsetspeed <= self.smartspeed):
@@ -150,7 +153,7 @@ class CarController():
         else:
           self.button_stop = 0
 
-        if abs(self.smartspeed - self.setspeed) < 0.5 or self.button_stop > 100:
+        if abs(self.smartspeed - self.setspeed) < 0.5 or self.button_stop > 10:
           self.smartspeedupdate = False
 
     return can_sends
