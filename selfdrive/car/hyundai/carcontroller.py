@@ -57,6 +57,7 @@ class CarController():
     self.sm = 0
     self.smartspeed = 0
     self.setspeed = 0
+    self.currentspeed = 0
     self.smartspeed_old = 0
     self.smartspeedupdate = False
     self.fixed_offset = 0
