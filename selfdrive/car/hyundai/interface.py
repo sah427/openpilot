@@ -229,7 +229,7 @@ class CarInterface(CarInterfaceBase):
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and b.pressed and not ret.brakePressed:
         events.add(EventName.buttonEnable)
       # do disable on button down
-      if b.type == ButtonType.cancel and b.pressed:
+      if (b.type == ButtonType.cancel and b.pressed) or ret.brakePressed:
         events.add(EventName.buttonCancel)
       if b.type == ButtonType.altButton3 and b.pressed:
         events.add(EventName.pcmDisable)
