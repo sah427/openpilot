@@ -40,15 +40,15 @@ class CarInterface(CarInterfaceBase):
     tire_stiffness_factor = 1.
 
     ret.steermaxLimit = 255  # stock
-    ret.longitudinalTuning.kfBP = [0.]
-    ret.longitudinalTuning.kfV = [1.]
+    ret.longitudinalTuning.kfBP = [0., 5.]
+    ret.longitudinalTuning.kfV = [1., 1.]
 
-    ret.lateralTuning.pid.kiBP = [0., 10., 20.]
-    ret.lateralTuning.pid.kpV = [0.03, 0.08, 0.13]
+    ret.lateralTuning.pid.kiBP = [0., 1., 20.]
+    ret.lateralTuning.pid.kpV = [0.01, 0.03, 0.03]
     ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-    ret.lateralTuning.pid.kiV = [0.001, 0.003, 0.005]
+    ret.lateralTuning.pid.kiV = [0.001, 0.003, 0.003]
     ret.lateralTuning.pid.kfBP = [0., 10., 30.]
-    ret.lateralTuning.pid.kfV = [0.00002, 0.00003, 0.00005]
+    ret.lateralTuning.pid.kfV = [0.00002, 0.00003, 0.00003]
 
     if candidate == CAR.SANTA_FE:
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
@@ -278,7 +278,6 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                                c.cruiseControl.cancel, c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
-                               c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart,
-                               )
+                               c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
     self.frame += 1
     return can_sends

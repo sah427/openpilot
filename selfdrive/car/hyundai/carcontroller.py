@@ -58,7 +58,6 @@ class CarController():
     self.sm = 0
     self.smartspeed = 0
     self.setspeed = 0
-    self.minsetspeed = 20
     self.currentspeed = 0
     self.smartspeed_old = 0
     self.smartspeedupdate = False
@@ -140,47 +139,47 @@ class CarController():
 
     # Speed Limit Related Stuff  Lot's of comments for others to understand!
     # Run this twice a second
-
     self.smartspeed_old = self.smartspeed
+
     if not travis:
       self.sm.update(0)
-      self.smartspeed = self.sm['liveMapData'].speedLimitAhead
-      if CS.is_set_speed_in_mph:
-        self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_MPH
-        self.fixed_offset = interp(self.smartspeed, splmoffsetmphBp, splmoffsetmphV)
-        self.smartspeed = self.smartspeed + int(self.fixed_offset)
-        self.setspeed = CS.cruisesetspeed * CV.MS_TO_MPH
-        self.minsetspeed = 20 * CV.MPH_TO_MS * CV.MS_TO_MPH
-        self.currentspeed = int(CS.out.vEgo * CV.MS_TO_MPH)
-      else:
-        self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_KPH
-        self.fixed_offset = interp(self.smartspeed, splmoffsetkphBp, splmoffsetkphV)
-        self.smartspeed = self.smartspeed + int(self.fixed_offset)
-        self.setspeed = CS.cruisesetspeed * CV.MS_TO_KPH
-        self.minsetspeed = 20 * CV.MPH_TO_MS * CV.MS_TO_KPH
-        self.currentspeed = int(CS.out.vEgo * CV.MS_TO_KPH)
-
-    if self.smartspeed_old != self.smartspeed:
-      self.smartspeedupdate = True
-
-    if enabled and CS.rawcruiseStateenabled and self.smartspeedupdate and (CS.cruise_buttons != 4)\
-            and (self.minsetspeed <= self.smartspeed):
-        if self.setspeed > (self.smartspeed * 1.005):
-          can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.SET_DECEL, self.currentspeed))
-          if CS.cruise_buttons == 1:
-             self.button_stop +=1
-          else:
-             self.button_stop = 0
-        elif self.setspeed < (self.smartspeed / 1.005):
-          can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.RES_ACCEL, self.currentspeed))
-          if CS.cruise_buttons == 2:
-             self.button_stop +=1
-          else:
-             self.button_stop = 0
+      if self.sm['liveMapData'].speedLimitAheadValid and enabled:
+        if CS.is_set_speed_in_mph:
+          self.smartspeed = self.sm['liveMapData'].speedLimitAhead * CV.MS_TO_MPH
+          self.fixed_offset = interp(self.smartspeed, splmoffsetmphBp, splmoffsetmphV)
+          self.smartspeed = self.smartspeed + int(self.fixed_offset)
+          self.smartspeed = max(self.smartspeed, 20)
+          self.setspeed = CS.cruisesetspeed * CV.MS_TO_MPH
+          self.currentspeed = int(CS.out.vEgo * CV.MS_TO_MPH)
         else:
-          self.button_stop = 0
+          self.smartspeed = self.sm['liveMapData'].speedLimitAhead * CV.MS_TO_KPH
+          self.fixed_offset = interp(self.smartspeed, splmoffsetkphBp, splmoffsetkphV)
+          self.smartspeed = self.smartspeed + int(self.fixed_offset)
+          self.smartspeed = max(self.smartspeed, 30)
+          self.setspeed = CS.cruisesetspeed * CV.MS_TO_KPH
+          self.currentspeed = int(CS.out.vEgo * CV.MS_TO_KPH)
 
-        if abs(self.smartspeed - self.setspeed) < 0.5 or self.button_stop > 10:
-          self.smartspeedupdate = False
+      if self.smartspeed_old != self.smartspeed:
+        self.smartspeedupdate = True
+
+      if enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
+          if self.setspeed > (self.smartspeed * 1.005) and (CS.cruise_buttons != 4):
+            can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.SET_DECEL, self.currentspeed))
+            if CS.cruise_buttons == 1:
+               self.button_stop +=1
+            else:
+               self.button_stop = 0
+          elif self.setspeed < (self.smartspeed / 1.005) and (CS.cruise_buttons != 4):
+            can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.RES_ACCEL, self.currentspeed))
+            if CS.cruise_buttons == 2:
+               self.button_stop +=1
+            else:
+               self.button_stop = 0
+          else:
+            self.button_stop = 0
+
+          if abs(self.smartspeed - self.setspeed) < 0.5 or self.button_stop > 10 or\
+                  self.sm['liveMapData'].speedLimitAheadValid or (CS.cruise_buttons == 4):
+            self.smartspeedupdate = False
 
     return can_sends
