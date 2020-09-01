@@ -7,6 +7,7 @@ from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR, FEATURES
 from opendbc.can.packer import CANPacker
+from selfdrive.config import Conversions as CV
 
 from common.travis_checker import travis
 
@@ -139,13 +140,13 @@ class CarController():
     if enabled and CS.rawcruiseStateenabled and self.smartspeedupdate and (CS.cruise_buttons != 4)\
             and (self.minsetspeed <= self.smartspeed):
         if self.setspeed > (self.smartspeed * 1.005):
-          can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.SET_DECEL, self.currentspeed))
+          can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.SET_DECEL))
           if CS.cruise_buttons == 1:
              self.button_stop +=1
           else:
              self.button_stop = 0
         elif self.setspeed < (self.smartspeed / 1.005):
-          can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.RES_ACCEL, self.currentspeed))
+          can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
           if CS.cruise_buttons == 2:
              self.button_stop +=1
           else:
