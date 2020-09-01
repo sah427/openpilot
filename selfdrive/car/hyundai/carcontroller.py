@@ -12,7 +12,7 @@ from selfdrive.config import Conversions as CV
 from common.travis_checker import travis
 
 splmoffsetmphBp = [30, 40, 55, 60, 70]
-splmoffsetmphV = [2, 3, 5, 7, 9]
+splmoffsetmphV = [0, 0, 0, 0, 0]
 
 splmoffsetkphBp = [30, 40, 55, 70]
 splmoffsetkphV = [0, 0, 0, 0]
