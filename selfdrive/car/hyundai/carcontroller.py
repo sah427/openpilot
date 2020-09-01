@@ -114,7 +114,6 @@ class CarController():
 
     if not travis:
       self.sm.update(0)
-      self.smartspeed = self.sm['liveMapData'].speedLimitAhead
       if self.sm['liveMapData'].speedLimitAheadValid and enabled:
         if CS.is_set_speed_in_mph:
           self.smartspeed = self.sm['liveMapData'].speedLimitAhead * CV.MS_TO_MPH
