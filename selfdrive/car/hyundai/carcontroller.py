@@ -119,15 +119,17 @@ class CarController():
         self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_MPH
         self.fixed_offset = interp(self.smartspeed, splmoffsetmphBp, splmoffsetmphV)
         self.smartspeed = self.smartspeed + int(self.fixed_offset)
+        self.minsetspeed = 20
+        self.smartspeed = max(self.smartspeed, self.minsetspeed)
         self.setspeed = CS.cruisesetspeed * CV.MS_TO_MPH
-        self.minsetspeed = 20 * CV.MPH_TO_MS * CV.MS_TO_MPH
         self.currentspeed = int(CS.out.vEgo * CV.MS_TO_MPH)
       else:
         self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_KPH
         self.fixed_offset = interp(self.smartspeed, splmoffsetkphBp, splmoffsetkphV)
         self.smartspeed = self.smartspeed + int(self.fixed_offset)
+        self.minsetspeed = 30
+        self.smartspeed = max(self.smartspeed, self.minsetspeed)
         self.setspeed = CS.cruisesetspeed * CV.MS_TO_KPH
-        self.minsetspeed = 20 * CV.MPH_TO_MS * CV.MS_TO_KPH
         self.currentspeed = int(CS.out.vEgo * CV.MS_TO_KPH)
 
     if self.smartspeed_old != self.smartspeed:
@@ -136,13 +138,13 @@ class CarController():
     if enabled and CS.rawcruiseStateenabled and self.smartspeedupdate and (CS.cruise_buttons != 4)\
             and (self.minsetspeed <= self.smartspeed):
         if self.setspeed > (self.smartspeed * 1.005):
-          can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.SET_DECEL, self.currentspeed))
+          can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.SET_DECEL))
           if CS.cruise_buttons == 1:
              self.button_stop +=1
           else:
              self.button_stop = 0
         elif self.setspeed < (self.smartspeed / 1.005):
-          can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.RES_ACCEL, self.currentspeed))
+          can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
           if CS.cruise_buttons == 2:
              self.button_stop +=1
           else:
