@@ -1,6 +1,8 @@
 from numpy import interp
 
 from cereal import car, messaging
+from common import op_params
+from common.op_params import opParams
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa
@@ -114,7 +116,8 @@ class CarController():
 
     if not travis:
       self.sm.update(0)
-      if self.sm['liveMapData'].speedLimitvalid and enabled:
+      op_params = opParams()
+      if self.sm['liveMapData'].speedLimitvalid and enabled and op_params.get('smart_speed'):
         if CS.is_set_speed_in_mph:
           self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_MPH
           self.fixed_offset = interp(self.smartspeed, splmoffsetmphBp, splmoffsetmphV)
