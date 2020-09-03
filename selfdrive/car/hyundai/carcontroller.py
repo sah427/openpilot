@@ -120,10 +120,16 @@ class CarController():
                                    left_lane_warning, right_lane_warning, self.lfa_available, 0))
 
     if CS.mdps_bus: # send lkas11 bus 1 if mdps
-      clu11_speed = CS.clu11["CF_Clu_Vanz"]
+      clu11_speed = self.currentspeed = CS.clu11["CF_Clu_Vanz"]
       enabled_speed = 38 if CS.is_set_speed_in_mph else 60
       if clu11_speed > enabled_speed or not lkas_active or CS.out.gearShifter == GearShifter.reverse:
-          enabled_speed = clu11_speed
+        enabled_speed = clu11_speed
+      else:
+        if CS.is_set_speed_in_mph:
+          self.currentspeed = int(CS.out.vEgo * CV.MS_TO_MPH)
+        else:
+          self.currentspeed = int(CS.out.vEgo * CV.MS_TO_KPH)
+        
       can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
                                    CS.lkas11, sys_warning, sys_state, enabled,
                                    left_lane, right_lane,
@@ -152,14 +158,12 @@ class CarController():
           self.smartspeed = self.smartspeed + int(self.fixed_offset)
           self.smartspeed = max(self.smartspeed, 20)
           self.setspeed = CS.cruisesetspeed * CV.MS_TO_MPH
-          self.currentspeed = int(CS.out.vEgo * CV.MS_TO_MPH)
         else:
           self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_KPH
           self.fixed_offset = interp(self.smartspeed, splmoffsetkphBp, splmoffsetkphV)
           self.smartspeed = self.smartspeed + int(self.fixed_offset)
           self.smartspeed = max(self.smartspeed, 30)
           self.setspeed = CS.cruisesetspeed * CV.MS_TO_KPH
-          self.currentspeed = int(CS.out.vEgo * CV.MS_TO_KPH)
 
         if self.smartspeed_old != self.smartspeed:
           self.smartspeedupdate = True
@@ -168,7 +172,7 @@ class CarController():
       else:
         self.smartspeed_old = 0
 
-      if frame % 5 == 0 and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
+      if enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
         if (self.setspeed > (self.smartspeed * 1.005)) and (CS.cruise_buttons != 4):
           can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.SET_DECEL, self.currentspeed))
           if CS.cruise_buttons == 1:
