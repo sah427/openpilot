@@ -140,7 +140,7 @@ class CarController():
       else:
         self.smartspeed_old = 0
 
-      if (frame - self.last_button_frame <= 5) and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
+      if (frame - self.last_button_frame <= 1) and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
         if (self.setspeed > (self.smartspeed * 1.005)) and (CS.cruise_buttons != 4):
           can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.SET_DECEL))
           if CS.cruise_buttons == 1:
