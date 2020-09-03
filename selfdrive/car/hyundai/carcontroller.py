@@ -55,6 +55,7 @@ class CarController():
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
     self.last_button_frame = 0
+    self.button_cnt = 0
 
     self.sm = 0
     self.smartspeed = 0
@@ -98,15 +99,17 @@ class CarController():
                         left_lane, right_lane, left_lane_depart, right_lane_depart)
 
     can_sends = []
+    self.clu11_cnt = frame % 0x10
+
     can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
                                    CS.lkas11, sys_warning, sys_state, enabled,
                                    left_lane, right_lane,
                                    left_lane_warning, right_lane_warning, self.lfa_available))
 
     if pcm_cancel_cmd:
-      can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
+      can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL, self.clu11_cnt))
     elif CS.out.cruiseState.standstill and CS.vrelative > 0:
-      can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
+      can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL, self.clu11_cnt))
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.lfa_available:
@@ -135,23 +138,22 @@ class CarController():
 
         if self.smartspeed_old != self.smartspeed:
           self.smartspeedupdate = True
+          self.button_cnt = 0
 
         self.smartspeed_old = self.smartspeed
       else:
         self.smartspeed_old = 0
         self.smartspeedupdate = op_params.get('smart_speed')
 
-      frequency = int(op_params.get('default_brake_distance'))
-
-      if (frame % frequency == 0) and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
+      if (frame - self.last_button_frame) > 5 and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
         if (self.setspeed > (self.smartspeed * 1.005)) and (CS.cruise_buttons != 4):
-          can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.SET_DECEL))
+          can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.SET_DECEL, self.button_cnt))
           if CS.cruise_buttons == 1:
              self.button_res_stop += 2
           else:
              self.button_res_stop -= 1
         elif (self.setspeed < (self.smartspeed / 1.005)) and (CS.cruise_buttons != 4):
-          can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
+          can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL, self.button_cnt))
           if CS.cruise_buttons == 2:
              self.button_set_stop += 2
           else:
@@ -161,6 +163,11 @@ class CarController():
 
         if (abs(self.smartspeed - self.setspeed) < 1) or (self.button_res_stop >= 50) or (self.button_set_stop >= 50):
           self.smartspeedupdate = False
+
+        self.button_cnt += 1
+        if self.button_cnt > 5:
+          self.last_button_frame = frame
+          self.button_cnt = 0
       else:
         self.button_set_stop = self.button_res_stop = 0
 
