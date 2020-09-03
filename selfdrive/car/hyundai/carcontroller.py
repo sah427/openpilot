@@ -70,17 +70,19 @@ class CarController():
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
 
-    if self.car_fingerprint in FEATURES["send_lfa_mfa"]:
-      self.lfa_available = True
-    else:
-      self.lfa_available = False
+    # *** compute control surfaces ***
+
+    self.lfa_available = True if self.car_fingerprint in FEATURES["send_lfa_mfa"] else False
+
+    self.high_steering_allowed = True if self.car_fingerprint in FEATURES["allow_high_steering"] else False
+
     # Steering Torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models
-    lkas_active = enabled and abs(CS.out.steeringAngle) < 90.
+    lkas_active = enabled and ((abs(CS.out.steeringAngle) < 90.) or self.high_steering_allowed)
 
     # fix for Genesis hard fault at low speed
     if CS.out.vEgo < 16.7 and self.car_fingerprint == CAR.HYUNDAI_GENESIS:
@@ -104,9 +106,7 @@ class CarController():
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
     elif CS.out.cruiseState.standstill and CS.vrelative > 0:
-      if (frame - self.last_resume_frame)*DT_CTRL > 0.2:
         can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
-        self.last_resume_frame = frame
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.lfa_available:
@@ -140,7 +140,7 @@ class CarController():
       else:
         self.smartspeed_old = 0
 
-      if frame % 50 == 0 and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
+      if frame % 5 == 0 and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
         if (self.setspeed > (self.smartspeed * 1.005)) and (CS.cruise_buttons != 4):
           can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.SET_DECEL))
           if CS.cruise_buttons == 1:

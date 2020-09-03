@@ -6,8 +6,8 @@ Ecu = car.CarParams.Ecu
 
 # Steer torque limits
 class SteerLimitParams:
-  STEER_MAX = 255   # 409 is the max, 255 is stock
-  STEER_DELTA_UP = 3
+  STEER_MAX = 384   # 409 is the max, 255 is stock
+  STEER_DELTA_UP = 4
   STEER_DELTA_DOWN = 7
   STEER_DRIVER_ALLOWANCE = 50
   STEER_DRIVER_MULTIPLIER = 2
@@ -238,6 +238,7 @@ FEATURES = {
               CAR.KIA_SPORTAGE, CAR.KONA_HEV, CAR.PALISADE, CAR.GRANDEUR_HEV, CAR.GENESIS_G70, CAR.VELOSTER]),
 
   "use_bsm": set([CAR.SONATA, CAR.PALISADE, CAR.HYUNDAI_GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.KONA]),
+  "allow_high_steering": set([CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV]),
 }
 
 ELEC_VEH = set([CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV])
