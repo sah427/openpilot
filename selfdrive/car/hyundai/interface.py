@@ -185,13 +185,14 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
 
     # ignore CAN1 address if L-CAN on the same BUS
-    #if 593 in fingerprint[1] and 1296 not in fingerprint[1]:
-    ret.mdpsBus = 1
+    if 593 in fingerprint[1] and 1296 not in fingerprint[1]:
+      ret.mdpsBus = 1
 
     if 688 in fingerprint[1] and 1296 not in fingerprint[1]:
       ret.sasBus = 1
 
     ret.autoLcaEnabled = True
+    ret.mdpsBus = 1
 
     if ret.mdpsBus != 0:
       ret.minSteerSpeed = 0.
