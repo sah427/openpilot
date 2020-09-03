@@ -2,6 +2,7 @@ from numpy import interp
 
 from cereal import car, messaging
 from common import op_params
+from common.op_params import opParams
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.carstate import GearShifter
@@ -55,6 +56,8 @@ class CarController():
     self.longcontrol = False
     self.manual_steering = False
     self.manual_steering_timer = 0
+    self.last_resume_frame = 0
+
     self.sm = 0
     self.smartspeed = 0
     self.setspeed = 0
@@ -71,10 +74,10 @@ class CarController():
 
     # *** compute control surfaces ***
 
-    if self.car_fingerprint in FEATURES["send_lfa_mfa"]:
-      self.lfa_available = True
-    else:
-      self.lfa_available = False
+    self.lfa_available = True if self.car_fingerprint in FEATURES["send_lfa_mfa"] else False
+
+    self.high_steering_allowed = True if self.car_fingerprint in FEATURES["allow_high_steering"] else False
+
     # Steering Torque
     updated_SteerLimitParams = SteerLimitParams
     updated_SteerLimitParams.STEER_MAX = self.steermaxLimit
@@ -84,7 +87,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models
-    lkas_active = enabled and abs(CS.out.steeringAngle) < 90.
+    lkas_active = enabled and ((abs(CS.out.steeringAngle) < 90.) or self.high_steering_allowed)
 
     # fix for Genesis hard fault at low speed
     if CS.out.vEgo < 55 * CV.KPH_TO_MS and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
@@ -141,7 +144,8 @@ class CarController():
 
     if not travis:
       self.sm.update(0)
-      if self.sm['liveMapData'].speedLimit and enabled:
+      op_params = opParams()
+      if self.sm['liveMapData'].speedLimitvalid and enabled and op_params.get('smart_speed'):
         if CS.is_set_speed_in_mph:
           self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_MPH
           self.fixed_offset = interp(self.smartspeed, splmoffsetmphBp, splmoffsetmphV)
@@ -156,15 +160,15 @@ class CarController():
           self.smartspeed = max(self.smartspeed, 30)
           self.setspeed = CS.cruisesetspeed * CV.MS_TO_KPH
           self.currentspeed = int(CS.out.vEgo * CV.MS_TO_KPH)
+
+        if self.smartspeed_old != self.smartspeed:
+          self.smartspeedupdate = True
+
+        self.smartspeed_old = self.smartspeed
       else:
         self.smartspeed_old = 0
 
-      if self.smartspeed_old != self.smartspeed:
-        self.smartspeedupdate = True
-
-      self.smartspeed_old = self.smartspeed
-
-      if enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
+      if frame % 5 == 0 and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
         if (self.setspeed > (self.smartspeed * 1.005)) and (CS.cruise_buttons != 4):
           can_sends.append(create_clu11(self.packer, frame, 0, CS.clu11, Buttons.SET_DECEL, self.currentspeed))
           if CS.cruise_buttons == 1:
@@ -180,7 +184,7 @@ class CarController():
         else:
           self.button_res_stop = self.button_set_stop = 0
 
-        if (abs(self.smartspeed - self.setspeed) < 1) or (self.button_res_stop >= 100) or (self.button_set_stop >= 100):
+        if (abs(self.smartspeed - self.setspeed) < 1) or (self.button_res_stop >= 50) or (self.button_set_stop >= 50):
           self.smartspeedupdate = False
       else:
         self.button_set_stop = self.button_res_stop = 0
