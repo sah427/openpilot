@@ -139,8 +139,11 @@ class CarController():
         self.smartspeed_old = self.smartspeed
       else:
         self.smartspeed_old = 0
+        self.smartspeedupdate = op_params.get('smart_speed')
 
-      if (frame - self.last_button_frame <= 1) and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
+      frequency = int(op_params.get('default_brake_distance'))
+
+      if (frame % frequency == 0) and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
         if (self.setspeed > (self.smartspeed * 1.005)) and (CS.cruise_buttons != 4):
           can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.SET_DECEL))
           if CS.cruise_buttons == 1:
@@ -160,6 +163,5 @@ class CarController():
           self.smartspeedupdate = False
       else:
         self.button_set_stop = self.button_res_stop = 0
-        self.last_button_frame = frame
 
     return can_sends
