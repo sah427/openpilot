@@ -239,6 +239,7 @@ FEATURES = {
   "use_fca": set([]),
 
   "use_bsm": set([]),
+  "allow_high_steering": set([CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV]),
 }
 
 ELEC_VEH = set([CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV])
