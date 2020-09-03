@@ -54,7 +54,7 @@ class CarController():
     self.car_fingerprint = CP.carFingerprint
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
-    self.last_resume_frame = 0
+    self.last_button_frame = 0
 
     self.sm = 0
     self.smartspeed = 0
@@ -140,14 +140,14 @@ class CarController():
       else:
         self.smartspeed_old = 0
 
-      if enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
-        if frame % 40 == 0 and (self.setspeed > (self.smartspeed * 1.005)) and (CS.cruise_buttons != 4):
+      if (frame - self.last_button_frame <= 5) and enabled and CS.rawcruiseStateenabled and self.smartspeedupdate:
+        if (self.setspeed > (self.smartspeed * 1.005)) and (CS.cruise_buttons != 4):
           can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.SET_DECEL))
           if CS.cruise_buttons == 1:
              self.button_res_stop += 2
           else:
              self.button_res_stop -= 1
-        elif frame % 40 == 0 and (self.setspeed < (self.smartspeed / 1.005)) and (CS.cruise_buttons != 4):
+        elif (self.setspeed < (self.smartspeed / 1.005)) and (CS.cruise_buttons != 4):
           can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
           if CS.cruise_buttons == 2:
              self.button_set_stop += 2
@@ -160,5 +160,6 @@ class CarController():
           self.smartspeedupdate = False
       else:
         self.button_set_stop = self.button_res_stop = 0
+        self.last_button_frame = frame
 
     return can_sends
