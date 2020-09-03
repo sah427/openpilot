@@ -117,7 +117,7 @@ class CarController():
     if not travis:
       self.sm.update(0)
       op_params = opParams()
-      if self.sm['liveMapData'].speedLimitvalid and enabled and op_params.get('smart_speed'):
+      if self.sm['liveMapData'].speedLimitValid and enabled and op_params.get('smart_speed'):
         if CS.is_set_speed_in_mph:
           self.smartspeed = self.sm['liveMapData'].speedLimit * CV.MS_TO_MPH
           self.fixed_offset = interp(self.smartspeed, splmoffsetmphBp, splmoffsetmphV)
