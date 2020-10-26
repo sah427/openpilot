@@ -1,4 +1,3 @@
-
 import os
 import time
 from cereal import car
@@ -91,18 +90,18 @@ class CarInterfaceBase():
 
     if cs_out.doorOpen:
       events.add(EventName.doorOpen)
-    #if cs_out.seatbeltUnlatched:
-    #  events.add(EventName.seatbeltNotLatched)
-    #if cs_out.gearShifter != GearShifter.drive and cs_out.gearShifter not in extra_gears:
-    #  events.add(EventName.wrongGear)
+    if cs_out.seatbeltUnlatched:
+      events.add(EventName.seatbeltNotLatched)
+    if cs_out.gearShifter != GearShifter.drive and cs_out.gearShifter not in extra_gears:
+      events.add(EventName.wrongGear)
     if cs_out.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
     if not cs_out.cruiseState.available:
       events.add(EventName.wrongCarMode)
     if cs_out.espDisabled:
       events.add(EventName.espDisabled)
-    #if cs_out.gasPressed:
-    #  events.add(EventName.gasPressed)
+    if cs_out.gasPressed:
+      events.add(EventName.gasPressed)
     if cs_out.stockFcw:
       events.add(EventName.stockFcw)
     if cs_out.stockAeb:
@@ -120,9 +119,9 @@ class CarInterfaceBase():
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
     # Optionally allow to press gas at zero speed to resume.
     # e.g. Chrysler does not spam the resume button yet, so resuming with gas is handy. FIXME!
-    #if (cs_out.gasPressed and (not self.CS.out.gasPressed) and cs_out.vEgo > gas_resume_speed): or \
-      #(cs_out.brakePressed and (not self.CS.out.brakePressed or not cs_out.standstill)):
-    #  events.add(EventName.pedalPressed)
+    if (cs_out.gasPressed and (not self.CS.out.gasPressed) and cs_out.vEgo > gas_resume_speed) or \
+       (cs_out.brakePressed and (not self.CS.out.brakePressed or not cs_out.standstill)):
+      events.add(EventName.pedalPressed)
 
     # we engage when pcm is active (rising edge)
     if pcm_enable:
@@ -150,8 +149,11 @@ class CarStateBase:
   def __init__(self, CP):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
-    self.cruise_buttons = 0
     self.out = car.CarState.new_message()
+
+    self.cruise_buttons = 0
+    self.left_blinker_cnt = 0
+    self.right_blinker_cnt = 0
 
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
@@ -166,6 +168,11 @@ class CarStateBase:
 
     v_ego_x = self.v_ego_kf.update(v_ego_raw)
     return float(v_ego_x[0]), float(v_ego_x[1])
+
+  def update_blinker(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
+    self.left_blinker_cnt = blinker_time if left_blinker_lamp else max(self.left_blinker_cnt - 1, 0)
+    self.right_blinker_cnt = blinker_time if right_blinker_lamp else max(self.right_blinker_cnt - 1, 0)
+    return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
 
   @staticmethod
   def parse_gear_shifter(gear):
