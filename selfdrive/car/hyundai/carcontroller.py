@@ -55,7 +55,7 @@ class CarController():
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
-    # disable if steer angle reach 180 deg, otherwise mdps fault in some models
+    # disable if steer angle reach 250 deg, otherwise mdps fault in some models
     lkas_active = enabled and ((abs(CS.out.steeringAngle) < 90.) or self.high_steer_allowed)
 
     # fix for Genesis hard fault at low speed
